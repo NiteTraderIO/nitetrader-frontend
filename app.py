@@ -201,7 +201,7 @@ def main():
                 logging.info(f"Authenticated user: {verification['email']}")
                 
             else:
-                st.error("Subscription required. Please return to https://nitetrader.io to purchase access.")
+                st.error("Subscription required. Please return to https://beta.nitetrader.io to get early access.")
         else:
             st.error("Verification failed. Please try again.")
 
@@ -298,7 +298,7 @@ def main():
                     st.markdown(f"**NiteTraderAI:** {assistant_response}")
 
     else:
-        st.error("Please go to https://nitetrader.io to login.")
+        st.error("Please go to https://beta.nitetrader.io to get early access.")
 
 if __name__ == "__main__":
     main()
