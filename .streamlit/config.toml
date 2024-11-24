@@ -1,0 +1,24 @@
+[server]
+headless = true
+port = 8501
+enableCORS = true
+
+[logger]
+level="debug"
+
+[theme]
+primaryColor="#007bff"
+backgroundColor="#121212"
+secondaryBackgroundColor="#1c1c1c"
+textColor="#d3d3d3"
+layout="wide"
+
+[theme.button]
+color = "#3498db"
+backgroundColor = "#2c3e50"
+textColor = "#ffffff"
+
+[theme.linkButton]
+color = "#007bff"
+backgroundColor = "#f7f7f7"
+textColor = "#000000"
