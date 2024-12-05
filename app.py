@@ -46,12 +46,6 @@ nite_trader_gpt = {
         {"type": "code_interpreter"}
     ]
 }
-
-# Clear Streamlit's redirect-related query parameters
-if st.experimental_get_query_params().get("redirect_uri"):
-    st.experimental_set_query_params()  # Clear query params
-    #st.experimental_rerun()  # Restart the app flow without the redirect
-
 # App config
 st.set_page_config(
    page_title="NiteTraderAI",
@@ -60,10 +54,14 @@ st.set_page_config(
    initial_sidebar_state="expanded",
 )
 
+# Clear Streamlit's redirect-related query parameters
+if st.experimental_get_query_params().get("redirect_uri"):
+    st.experimental_set_query_params()  # Clear query params
+    #st.experimental_rerun()  # Restart the app flow without the redirect
 
 # Authentication function
 def verify_sub_id(sub_id):
-    url = "https://nitetrader.io/verify_sub_id"
+    url = st.secrets["verify_sub_id_endpoint"]
     logging.info(f"Verifying sub_id={sub_id} with URL={url}")
     try:
         response = requests.get(url, params={"sub_id": sub_id})
@@ -181,7 +179,7 @@ def main():
         logging.debug("Initialized 'mode' in session state.")
 
     # Add custom CSS for background image
-    st.image("https://nitetrader.io/nitetrader-1.png", width=250, use_column_width=True)
+    st.image("https://nitetrader.io/logo.png", width=250, use_column_width=True)
 
     # Check for sub_id in URL parameters
     query_params = st.experimental_get_query_params()
@@ -211,7 +209,7 @@ def main():
         st.sidebar.button("Logout", on_click=logout)
 
         # Select application mode
-        app_mode = st.sidebar.selectbox("Choose App Mode", ["Strategies", "Trading Assistant"])
+        app_mode = st.sidebar.selectbox("Choose App Mode", ["Trading Assistant", "Strategies"])
 
         # Dashboard mode
         if app_mode == "Strategies":
@@ -277,7 +275,7 @@ def main():
                 if msg["role"] == "user":
                     st.markdown(f"**You:** {msg['content']}")
                 else:
-                    st.markdown(f"**NiteTraderAI:** {msg['content']}")
+                    st.markdown(f"**KnightTraderAI:** {msg['content']}")
 
             uploaded_file = st.file_uploader("Upload a TradingView chart image to get started!", type=["png", "jpg", "jpeg"])
 
@@ -295,7 +293,7 @@ def main():
                     st.session_state.conversation.append({"role": "user", "content": query})
                     assistant_response = get_response_with_image(nite_trader_gpt, st.session_state.conversation, base64_image)
                     st.session_state.conversation.append({"role": "assistant", "content": assistant_response})
-                    st.markdown(f"**NiteTraderAI:** {assistant_response}")
+                    st.markdown(f"**KnightTraderAI:** {assistant_response}")
 
     else:
         st.error("Please go to https://beta.nitetrader.io to get early access.")
