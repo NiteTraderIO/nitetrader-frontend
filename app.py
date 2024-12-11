@@ -20,15 +20,34 @@ import json
 from fastapi.responses import JSONResponse # type: ignore
 import time
 
-# Load environment variables
-openai_api_key = st.secrets["openai_api_key"]
-assistant_id = st.secrets["assistant_id"]
+# Configure logging with more detailed format
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s')
+logger = logging.getLogger(__name__)
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Debug logging for secrets
+try:
+    logger.debug("Attempting to access st.secrets")
+    # Log available secret keys (without their values)
+    secret_keys = list(st.secrets.keys())
+    logger.debug(f"Available secret keys: {secret_keys}")
+    
+    openai_api_key = st.secrets["openai_api_key"]
+    logger.debug("Successfully retrieved openai_api_key from st.secrets")
+    
+    assistant_id = st.secrets["assistant_id"]
+    logger.debug("Successfully retrieved assistant_id from st.secrets")
+except Exception as e:
+    logger.error(f"Error accessing secrets: {str(e)}", exc_info=True)
+    raise
 
 # Initialize the OpenAI client
-client = OpenAI(api_key=openai_api_key)
+try:
+    logger.debug("Attempting to initialize OpenAI client")
+    client = OpenAI(api_key=openai_api_key)
+    logger.debug("Successfully initialized OpenAI client")
+except Exception as e:
+    logger.error(f"Error initializing OpenAI client: {str(e)}", exc_info=True)
+    raise
 
 # Initialize the exchange
 exchange = ccxt.kraken()  # Replace with the options to pick exchange
@@ -61,16 +80,16 @@ if st.experimental_get_query_params().get("redirect_uri"):
 
 # Authentication function
 def verify_sub_id(sub_id):
-    url = st.secrets["verify_sub_id_endpoint"]
-    logging.info(f"Verifying sub_id={sub_id} with URL={url}")
     try:
+        url = st.secrets["verify_sub_id_endpoint"]
+        logger.debug(f"Verifying sub_id={sub_id} with URL={url}")
         response = requests.get(url, params={"sub_id": sub_id})
         response.raise_for_status()
-        logging.info(f"Verification response: {response.json()}")
+        logger.debug(f"Verification response: {response.json()}")
         return response.json()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Verification failed: {e}")
-        st.error(f"Verification failed: {e}")
+    except Exception as e:
+        logger.error(f"Verification failed: {str(e)}", exc_info=True)
+        st.error(f"Verification failed: {str(e)}")
         return None
 
 # Core functions
@@ -101,13 +120,19 @@ def check_signals(row: pd.Series, buy_threshold: float, sell_threshold: float) -
     return 'Hold'
 
 def get_initial_instruction(mode):
-    # Read instructions from secrets.toml
-    priority_instructions = st.secrets["instructions"]["priority"]
-    instructions = f"""
-    {priority_instructions}
-    Current Mode: {mode}
-    """
-    return instructions
+    try:
+        # Read instructions from secrets.toml
+        logger.debug("Attempting to access instructions from secrets")
+        priority_instructions = st.secrets["instructions"]["priority"]
+        logger.debug("Successfully retrieved priority instructions")
+        instructions = f"""
+        {priority_instructions}
+        Current Mode: {mode}
+        """
+        return instructions
+    except Exception as e:
+        logger.error(f"Error accessing instructions from secrets: {str(e)}", exc_info=True)
+        raise
 
 def encode_image(image):
     buffered = io.BytesIO()
@@ -134,7 +159,7 @@ def get_response_with_image(nite_trader_gpt, conversation, base64_image=None):
             {**msg, 'content': msg['content'] if isinstance(msg['content'], str) else '[Image data]'}
             for msg in messages
         ]
-        logging.info(f"Sending messages to API: {json.dumps(log_messages, indent=2)}")
+        logger.debug(f"Sending messages to API: {json.dumps(log_messages, indent=2)}")
 
         response = client.chat.completions.create(
             model=nite_trader_gpt['model'],
@@ -143,7 +168,7 @@ def get_response_with_image(nite_trader_gpt, conversation, base64_image=None):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        logging.exception(f"An error occurred while getting response: {e}")
+        logger.exception(f"An error occurred while getting response: {e}")
         st.error(f"An error occurred: {e}")
         return "An error occurred while processing your request."
 
@@ -159,36 +184,36 @@ def logout():
 
 # Main app logic
 def main():
-    logging.info("Starting the main function.")
+    logger.info("Starting the main function.")
 
     # Initialize session state variables
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
-        logging.debug("Initialized 'authenticated' in session state.")
+        logger.debug("Initialized 'authenticated' in session state.")
 
     if "is_subscribed" not in st.session_state:
         st.session_state.is_subscribed = False
-        logging.debug("Initialized 'is_subscribed' in session state.")
+        logger.debug("Initialized 'is_subscribed' in session state.")
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = []
-        logging.debug("Initialized 'conversation' in session state.")
+        logger.debug("Initialized 'conversation' in session state.")
 
     if "mode" not in st.session_state:
         st.session_state.mode = "Normie"
-        logging.debug("Initialized 'mode' in session state.")
+        logger.debug("Initialized 'mode' in session state.")
 
     # Add custom CSS for background image
     st.image("https://nitetrader.io/logo.png", width=250, use_column_width=True)
 
     # Check for sub_id in URL parameters
     query_params = st.experimental_get_query_params()
-    logging.debug(f"Query Parameters: {query_params}")
+    logger.debug(f"Query Parameters: {query_params}")
     sub_id_values = query_params.get("sub_id")
 
     if sub_id_values and not st.session_state.authenticated:
         sub_id = sub_id_values[0]
-        logging.info(f"Received sub_id: {sub_id}")
+        logger.info(f"Received sub_id: {sub_id}")
         verification = verify_sub_id(sub_id)
         if verification and verification["status"] == "valid":
             if verification["is_subscribed"] == 1:
@@ -196,7 +221,7 @@ def main():
                 st.session_state.is_subscribed = True
                 st.session_state.user_email = verification["email"]
                 st.experimental_set_query_params()  # Clear query params
-                logging.info(f"Authenticated user: {verification['email']}")
+                logger.info(f"Authenticated user: {verification['email']}")
                 
             else:
                 st.error("Subscription required. Please return to https://beta.nitetrader.io to get early access.")
