@@ -24,21 +24,8 @@ import time
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Debug logging for secrets
-try:
-    logger.debug("Attempting to access st.secrets")
-    # Log available secret keys (without their values)
-    secret_keys = list(st.secrets.keys())
-    logger.debug(f"Available secret keys: {secret_keys}")
-    
-    openai_api_key = st.secrets["openai_api_key"]
-    logger.debug("Successfully retrieved openai_api_key from st.secrets")
-    
-    assistant_id = st.secrets["assistant_id"]
-    logger.debug("Successfully retrieved assistant_id from st.secrets")
-except Exception as e:
-    logger.error(f"Error accessing secrets: {str(e)}", exc_info=True)
-    raise
+openai_api_key = st.secrets["openai_api_key"]
+assistant_id = st.secrets["assistant_id"]
 
 # Initialize the OpenAI client with updated configuration
 try:
@@ -81,7 +68,6 @@ st.set_page_config(
 # Clear Streamlit's redirect-related query parameters
 if st.experimental_get_query_params().get("redirect_uri"):
     st.experimental_set_query_params()  # Clear query params
-    #st.experimental_rerun()  # Restart the app flow without the redirect
 
 # Authentication function
 def verify_sub_id(sub_id):
@@ -186,7 +172,6 @@ def logout():
     """
     st.markdown(js, unsafe_allow_html=True)
 
-
 # Main app logic
 def main():
     logger.info("Starting the main function.")
@@ -229,7 +214,7 @@ def main():
                 logger.info(f"Authenticated user: {verification['email']}")
                 
             else:
-                st.error("Subscription required. Please return to https://beta.nitetrader.io to get early access.")
+                st.error("Subscription required. Please visit https://nitetrader.io to get access.")
         else:
             st.error("Verification failed. Please try again.")
 
@@ -326,7 +311,7 @@ def main():
                     st.markdown(f"**KnightTraderAI:** {assistant_response}")
 
     else:
-        st.error("Please go to https://beta.nitetrader.io to get early access.")
+        st.error("Please visit https://nitetrader.io to log in.")
 
 if __name__ == "__main__":
     main()
