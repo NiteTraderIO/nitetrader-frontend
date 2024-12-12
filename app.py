@@ -40,10 +40,15 @@ except Exception as e:
     logger.error(f"Error accessing secrets: {str(e)}", exc_info=True)
     raise
 
-# Initialize the OpenAI client
+# Initialize the OpenAI client with updated configuration
 try:
     logger.debug("Attempting to initialize OpenAI client")
-    client = OpenAI(api_key=openai_api_key)
+    client = OpenAI(
+        api_key=openai_api_key,
+        base_url="https://api.openai.com/v1",
+        timeout=60.0,
+        max_retries=2
+    )
     logger.debug("Successfully initialized OpenAI client")
 except Exception as e:
     logger.error(f"Error initializing OpenAI client: {str(e)}", exc_info=True)
